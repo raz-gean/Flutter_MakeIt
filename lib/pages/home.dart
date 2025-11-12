@@ -18,7 +18,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   List<Recipe> recipes = [
     Recipe(
-      title: "Chocolate Cookies",
+      title: "Choco Cookies",
       description: "Crispy on the edges and chewy in the center",
       imagePath: "assets/images/recipe1.jpg",
       ingredients: [
@@ -172,6 +172,17 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _loadFavorites();
+    // Delay precaching until after first frame to avoid MediaQuery dependency issues
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _precacheImages();
+    });
+  }
+
+  void _precacheImages() {
+    // Precache all recipe images to avoid loading delays on device
+    for (var recipe in recipes) {
+      precacheImage(AssetImage(recipe.imagePath), context);
+    }
   }
 
   void _loadFavorites() async {
@@ -200,8 +211,12 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget buildHeroSection() {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+
     return Container(
-      height: 180, // smaller height
+      height: isMobile ? screenHeight * 0.18 : screenHeight * 0.22,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         gradient: const LinearGradient(
@@ -216,11 +231,11 @@ class _HomePageState extends State<HomePage> {
           Align(
             alignment: Alignment.centerLeft,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
               child: Text(
                 "Discover\nDelicious Recipes 🍳",
                 style: GoogleFonts.oswald(
-                  fontSize: 24, // slightly smaller
+                  fontSize: isMobile ? screenWidth * 0.06 : screenWidth * 0.05,
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
                   height: 1.2,
@@ -233,13 +248,20 @@ class _HomePageState extends State<HomePage> {
           Align(
             alignment: Alignment.bottomRight,
             child: Padding(
-              padding: const EdgeInsets.only(right: 16, bottom: 16),
+              padding: EdgeInsets.only(
+                right: screenWidth * 0.04,
+                bottom: screenHeight * 0.015,
+              ),
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: Colors.redAccent,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: screenWidth * 0.03,
+                    vertical: screenHeight * 0.008,
                   ),
                 ),
                 onPressed: () {
@@ -248,8 +270,11 @@ class _HomePageState extends State<HomePage> {
                     MaterialPageRoute(builder: (_) => const FavoritesPage()),
                   ).then((_) => _loadFavorites());
                 },
-                icon: const Icon(Icons.favorite),
-                label: const Text("Favorites"),
+                icon: Icon(Icons.favorite, size: screenWidth * 0.05),
+                label: Text(
+                  "Favorites",
+                  style: TextStyle(fontSize: screenWidth * 0.035),
+                ),
               ),
             ),
           ),
@@ -258,7 +283,10 @@ class _HomePageState extends State<HomePage> {
           Align(
             alignment: Alignment.topRight,
             child: Padding(
-              padding: const EdgeInsets.only(right: 16, top: 16),
+              padding: EdgeInsets.only(
+                right: screenWidth * 0.04,
+                top: screenHeight * 0.015,
+              ),
               child: GestureDetector(
                 onTap: () {
                   // Navigate to settings page
@@ -267,9 +295,14 @@ class _HomePageState extends State<HomePage> {
                     MaterialPageRoute(builder: (_) => const SettingsPage()),
                   );
                 },
-                child: const CircleAvatar(
+                child: CircleAvatar(
+                  radius: screenWidth * 0.06,
                   backgroundColor: Colors.white,
-                  child: Icon(Icons.person, color: Colors.redAccent),
+                  child: Icon(
+                    Icons.person,
+                    color: Colors.redAccent,
+                    size: screenWidth * 0.05,
+                  ),
                 ),
               ),
             ),
@@ -280,9 +313,12 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget buildWelcomeSection() {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Container(
-      margin: const EdgeInsets.only(top: 20),
-      padding: const EdgeInsets.all(20),
+      margin: EdgeInsets.only(top: screenHeight * 0.02),
+      height: screenHeight * 0.26,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
@@ -292,72 +328,123 @@ class _HomePageState extends State<HomePage> {
             offset: const Offset(0, 4),
           ),
         ],
-        image: const DecorationImage(
-          image: AssetImage('assets/images/bagle.jpg'),
-          fit: BoxFit.cover,
-          colorFilter: ColorFilter.mode(
-            Colors.black54, // darken the image
-            BlendMode.darken,
-          ),
-        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          Row(
-            children: [
-              const CircleAvatar(
-                radius: 26,
-                backgroundColor: Colors.redAccent,
-                child: Text("🍳", style: TextStyle(fontSize: 24)),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                "Welcome to Makeit!",
-                style: GoogleFonts.oswald(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            "Discover a world of easy-to-follow recipes designed for everyone—from quick snacks to full meals. Save your favorites, explore different cuisines, and start your cooking journey today!",
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              color: Colors.white,
-              height: 1.5,
+          // Background Image
+          ClipRRect(
+            borderRadius: BorderRadius.circular(18),
+            child: Image.asset(
+              'assets/images/bagle.jpg',
+              fit: BoxFit.cover,
+              width: double.infinity,
+              height: double.infinity,
+              cacheHeight: (screenHeight * 0.26).toInt(),
+              cacheWidth: screenWidth.toInt(),
             ),
           ),
-          const SizedBox(height: 14),
-          Align(
-            alignment: Alignment.centerRight,
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const FavoritesPage()),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.redAccent,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 10,
+          // Dark Overlay
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(18),
+              color: Colors.black.withValues(alpha: 0.45),
+            ),
+          ),
+          // Content
+          Padding(
+            padding: EdgeInsets.all(screenWidth * 0.04),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          radius: screenWidth * 0.055,
+                          backgroundColor: Colors.redAccent,
+                          child: Text(
+                            "🍳",
+                            style: TextStyle(fontSize: screenWidth * 0.045),
+                          ),
+                        ),
+                        SizedBox(width: screenWidth * 0.025),
+                        Expanded(
+                          child: Text(
+                            "Welcome to Makeit!",
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.oswald(
+                              fontSize: screenWidth * 0.048,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              shadows: [
+                                Shadow(
+                                  offset: const Offset(1, 1),
+                                  blurRadius: 3,
+                                  color: Colors.black.withValues(alpha: 0.5),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: screenHeight * 0.008),
+                    Text(
+                      "Discover easy-to-follow recipes for everyone. Save favorites, explore cuisines, and start cooking today!",
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.poppins(
+                        fontSize: screenWidth * 0.032,
+                        color: Colors.white,
+                        height: 1.3,
+                        shadows: [
+                          Shadow(
+                            offset: const Offset(1, 1),
+                            blurRadius: 3,
+                            color: Colors.black.withValues(alpha: 0.5),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const FavoritesPage(),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.redAccent,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: screenWidth * 0.04,
+                        vertical: screenHeight * 0.01,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      elevation: 8,
+                    ),
+                    child: Text(
+                      "Start Cooking",
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                        fontSize: screenWidth * 0.032,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-              child: Text(
-                "Start Cooking",
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
+              ],
             ),
           ),
         ],
@@ -366,12 +453,15 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget buildCategoryBar() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return SizedBox(
-      height: 50,
+      height: screenHeight * 0.055,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: categories.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 12),
+        separatorBuilder: (_, _) => SizedBox(width: screenWidth * 0.03),
         itemBuilder: (context, index) {
           final category = categories[index];
           final isSelected = category == selectedCategory;
@@ -380,7 +470,10 @@ class _HomePageState extends State<HomePage> {
             onTap: () => setState(() => selectedCategory = category),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 250),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              padding: EdgeInsets.symmetric(
+                horizontal: screenWidth * 0.05,
+                vertical: screenHeight * 0.01,
+              ),
               decoration: BoxDecoration(
                 color: isSelected ? Colors.redAccent : Colors.grey[200],
                 borderRadius: BorderRadius.circular(20),
@@ -392,12 +485,13 @@ class _HomePageState extends State<HomePage> {
                           offset: const Offset(0, 3),
                         ),
                       ]
-                    : [],
+                    : const [],
               ),
               child: Center(
                 child: Text(
                   category,
                   style: GoogleFonts.poppins(
+                    fontSize: screenWidth * 0.035,
                     color: isSelected ? Colors.white : Colors.black87,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                   ),
@@ -412,108 +506,125 @@ class _HomePageState extends State<HomePage> {
 
   Widget buildRecipeCard(Recipe recipe) {
     final isFavorite = favoriteRecipes.any((fav) => fav.title == recipe.title);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
 
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => RecipeDetailPage(recipe: recipe)),
-        ).then((_) => _loadFavorites());
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withValues(alpha: 0.15),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Recipe Image
-            Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(18),
-                  ),
-                  child: Image.asset(
-                    recipe.imagePath,
-                    height: 130,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                Positioned(
-                  right: 10,
-                  top: 10,
-                  child: InkWell(
-                    onTap: () {
-                      if (isFavorite) {
-                        _removeFavorite(recipe);
-                      } else {
-                        _addFavorite(recipe);
-                      }
-                    },
-                    child: CircleAvatar(
-                      backgroundColor: Colors.white,
-                      child: Icon(
-                        isFavorite ? Icons.favorite : Icons.favorite_border,
-                        color: Colors.redAccent,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            // Recipe Info
-            Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return RepaintBoundary(
+      child: GestureDetector(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => RecipeDetailPage(recipe: recipe)),
+          ).then((_) => _loadFavorites());
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withValues(alpha: 0.15),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Recipe Image
+              Stack(
                 children: [
-                  Text(
-                    recipe.title,
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(18),
+                    ),
+                    child: Image.asset(
+                      recipe.imagePath,
+                      height: screenHeight * 0.15,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      cacheHeight: (screenHeight * 0.15).toInt(),
+                      cacheWidth: MediaQuery.of(context).size.width.toInt(),
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    recipe.description,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      color: Colors.grey[600],
+                  Positioned(
+                    right: screenWidth * 0.02,
+                    top: screenWidth * 0.02,
+                    child: InkWell(
+                      onTap: () {
+                        if (isFavorite) {
+                          _removeFavorite(recipe);
+                        } else {
+                          _addFavorite(recipe);
+                        }
+                      },
+                      child: CircleAvatar(
+                        radius: screenWidth * 0.045,
+                        backgroundColor: Colors.white,
+                        child: Icon(
+                          isFavorite ? Icons.favorite : Icons.favorite_border,
+                          color: Colors.redAccent,
+                          size: screenWidth * 0.04,
+                        ),
+                      ),
                     ),
                   ),
                 ],
               ),
-            ),
-          ],
+
+              // Recipe Info
+              Padding(
+                padding: EdgeInsets.all(screenWidth * 0.03),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      recipe.title,
+                      style: GoogleFonts.poppins(
+                        fontSize: screenWidth * 0.04,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    SizedBox(height: screenHeight * 0.004),
+                    Text(
+                      recipe.description,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.poppins(
+                        fontSize: screenWidth * 0.032,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget buildRecipeGrid() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+    final isTablet = screenWidth >= 600 && screenWidth < 1000;
+
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
+      addAutomaticKeepAlives: true,
       itemCount: recipes.length,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: 14,
-        crossAxisSpacing: 14,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: isMobile
+            ? 2
+            : isTablet
+            ? 3
+            : 4,
+        mainAxisSpacing: screenWidth * 0.035,
+        crossAxisSpacing: screenWidth * 0.035,
         childAspectRatio: 0.78,
       ),
       itemBuilder: (_, i) => buildRecipeCard(recipes[i]),
@@ -521,9 +632,15 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget buildMakeYourOwnSection() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Container(
-      margin: const EdgeInsets.only(top: 30, bottom: 20),
-      padding: const EdgeInsets.all(20),
+      margin: EdgeInsets.only(
+        top: screenHeight * 0.03,
+        bottom: screenHeight * 0.02,
+      ),
+      padding: EdgeInsets.all(screenWidth * 0.05),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
@@ -541,23 +658,28 @@ class _HomePageState extends State<HomePage> {
           Text(
             "You can also write your own recipe!",
             style: GoogleFonts.poppins(
-              fontSize: 18,
+              fontSize: screenWidth * 0.045,
               fontWeight: FontWeight.w600,
               color: Colors.black87,
             ),
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: screenHeight * 0.01),
           Text(
             "Create your own recipe masterpiece and save it locally. You can edit or delete it anytime!",
-            style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[700]),
+            style: GoogleFonts.poppins(
+              fontSize: screenWidth * 0.032,
+              color: Colors.grey[700],
+            ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: screenHeight * 0.016),
           Row(
             children: [
               Expanded(
                 child: _customButton(
                   icon: Icons.add,
                   label: "Add Recipe",
+                  screenWidth: screenWidth,
+                  screenHeight: screenHeight,
                   onPressed: () {
                     Navigator.push(
                       context,
@@ -566,11 +688,13 @@ class _HomePageState extends State<HomePage> {
                   },
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: screenWidth * 0.03),
               Expanded(
                 child: _customButton(
                   icon: Icons.book,
                   label: "My Recipes",
+                  screenWidth: screenWidth,
+                  screenHeight: screenHeight,
                   onPressed: () {
                     Navigator.push(
                       context,
@@ -591,6 +715,8 @@ class _HomePageState extends State<HomePage> {
   Widget _customButton({
     required IconData icon,
     required String label,
+    required double screenWidth,
+    required double screenHeight,
     required VoidCallback onPressed,
   }) {
     bool isHovering = false; // local variable inside a StatefulBuilder
@@ -602,7 +728,10 @@ class _HomePageState extends State<HomePage> {
           onExit: (_) => setState(() => isHovering = false),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(vertical: 14),
+            padding: EdgeInsets.symmetric(
+              vertical: screenHeight * 0.014,
+              horizontal: screenWidth * 0.02,
+            ),
             decoration: BoxDecoration(
               color: isHovering ? Colors.redAccent : Colors.white,
               border: Border.all(color: Colors.redAccent),
@@ -617,13 +746,15 @@ class _HomePageState extends State<HomePage> {
                   Icon(
                     icon,
                     color: isHovering ? Colors.white : Colors.redAccent,
+                    size: screenWidth * 0.04,
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: screenWidth * 0.02),
                   Text(
                     label,
                     style: TextStyle(
                       color: isHovering ? Colors.white : Colors.redAccent,
                       fontWeight: FontWeight.w600,
+                      fontSize: screenWidth * 0.032,
                     ),
                   ),
                 ],
@@ -636,19 +767,27 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget buildFooter() {
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Column(
       children: [
-        const SizedBox(height: 24),
+        SizedBox(height: screenWidth * 0.06),
         Divider(color: Colors.grey[300]),
-        const SizedBox(height: 8),
+        SizedBox(height: screenWidth * 0.02),
         Text(
           "© 2025 Makeit Recipes",
-          style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[600]),
+          style: GoogleFonts.poppins(
+            fontSize: screenWidth * 0.032,
+            color: Colors.grey[600],
+          ),
         ),
-        const SizedBox(height: 4),
+        SizedBox(height: screenWidth * 0.01),
         Text(
           "Made with ❤️ by Group ni Raz",
-          style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[500]),
+          style: GoogleFonts.poppins(
+            fontSize: screenWidth * 0.03,
+            color: Colors.grey[500],
+          ),
         ),
       ],
     );
@@ -656,6 +795,9 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),
       appBar: AppBar(
@@ -664,7 +806,7 @@ class _HomePageState extends State<HomePage> {
         title: Text(
           "Makeit",
           style: GoogleFonts.oswald(
-            fontSize: 28,
+            fontSize: screenWidth * 0.07,
             color: Colors.redAccent,
             fontWeight: FontWeight.bold,
           ),
@@ -672,23 +814,26 @@ class _HomePageState extends State<HomePage> {
         centerTitle: true,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding: EdgeInsets.symmetric(
+          horizontal: screenWidth * 0.04,
+          vertical: screenHeight * 0.01,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             buildHeroSection(),
             buildWelcomeSection(),
-            const SizedBox(height: 24),
+            SizedBox(height: screenHeight * 0.024),
             buildCategoryBar(),
-            const SizedBox(height: 24),
+            SizedBox(height: screenHeight * 0.024),
             Text(
               "Explore Recipes",
               style: GoogleFonts.poppins(
-                fontSize: 20,
+                fontSize: screenWidth * 0.05,
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: screenHeight * 0.012),
             buildRecipeGrid(),
             buildMakeYourOwnSection(),
             buildFooter(),

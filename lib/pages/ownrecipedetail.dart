@@ -35,124 +35,212 @@ class OwnRecipeDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),
       appBar: AppBar(
         title: Text(
           recipe.title,
-          style: GoogleFonts.oswald(color: Colors.redAccent),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: GoogleFonts.oswald(
+            color: Colors.redAccent,
+            fontSize: screenWidth * 0.05,
+          ),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.redAccent),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Ingredients
-            Text(
-              "Ingredients",
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            ...recipe.ingredients.map(
-              (ing) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                child: Text("• $ing", style: GoogleFonts.poppins(fontSize: 14)),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Steps
-            Text(
-              "Steps",
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            ...recipe.steps.asMap().entries.map((entry) {
-              int idx = entry.key + 1;
-              String step = entry.value;
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                child: Text(
-                  "$idx. $step",
-                  style: GoogleFonts.poppins(fontSize: 14),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.all(screenWidth * 0.04),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Ingredients Section
+              Text(
+                "Ingredients",
+                style: GoogleFonts.poppins(
+                  fontSize: screenWidth * 0.042,
+                  fontWeight: FontWeight.w600,
                 ),
-              );
-            }),
-
-            const SizedBox(height: 24),
-
-            // Action Buttons
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => _editRecipe(context),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.redAccent),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      foregroundColor: Colors.redAccent,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+              SizedBox(height: screenHeight * 0.012),
+              ...recipe.ingredients.map(
+                (ing) => RepaintBoundary(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      vertical: screenHeight * 0.006,
                     ),
-                    child: const Text("Edit"),
+                    child: Text(
+                      "• $ing",
+                      style: GoogleFonts.poppins(
+                        fontSize: screenWidth * 0.035,
+                        height: 1.4,
+                      ),
+                    ),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () {
-                      showDialog(
-                        context: context,
-                        builder: (_) => AlertDialog(
-                          title: const Text("Delete Recipe"),
-                          content: const Text(
-                            "Are you sure you want to delete this recipe?",
+              ),
+
+              SizedBox(height: screenHeight * 0.025),
+
+              // Steps Section
+              Text(
+                "Steps",
+                style: GoogleFonts.poppins(
+                  fontSize: screenWidth * 0.042,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              SizedBox(height: screenHeight * 0.012),
+              ...recipe.steps.asMap().entries.map((entry) {
+                int idx = entry.key + 1;
+                String step = entry.value;
+                return RepaintBoundary(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      vertical: screenHeight * 0.008,
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: screenWidth * 0.08,
+                          height: screenWidth * 0.08,
+                          decoration: BoxDecoration(
+                            color: Colors.redAccent,
+                            shape: BoxShape.circle,
                           ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: const Text("Cancel"),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                _deleteRecipe(context);
-                                Navigator.pop(context);
-                              },
-                              child: const Text(
-                                "Delete",
-                                style: TextStyle(color: Colors.redAccent),
+                          child: Center(
+                            child: Text(
+                              "$idx",
+                              style: GoogleFonts.poppins(
+                                fontSize: screenWidth * 0.032,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
                               ),
                             ),
-                          ],
+                          ),
                         ),
-                      );
-                    },
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.redAccent),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      foregroundColor: Colors.redAccent,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                        SizedBox(width: screenWidth * 0.035),
+                        Expanded(
+                          child: Text(
+                            step,
+                            style: GoogleFonts.poppins(
+                              fontSize: screenWidth * 0.035,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    child: const Text("Delete"),
                   ),
-                ),
-              ],
-            ),
-          ],
+                );
+              }),
+
+              SizedBox(height: screenHeight * 0.035),
+
+              // Action Buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => _editRecipe(context),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Colors.redAccent),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        foregroundColor: Colors.redAccent,
+                        padding: EdgeInsets.symmetric(
+                          vertical: screenHeight * 0.015,
+                        ),
+                      ),
+                      child: Text(
+                        "Edit",
+                        style: GoogleFonts.poppins(
+                          fontSize: screenWidth * 0.035,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: screenWidth * 0.03),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (_) => AlertDialog(
+                            title: Text(
+                              "Delete Recipe",
+                              style: GoogleFonts.poppins(
+                                fontSize: screenWidth * 0.04,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            content: Text(
+                              "Are you sure you want to delete this recipe?",
+                              style: GoogleFonts.poppins(
+                                fontSize: screenWidth * 0.035,
+                              ),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: Text(
+                                  "Cancel",
+                                  style: GoogleFonts.poppins(
+                                    fontSize: screenWidth * 0.032,
+                                    color: Colors.grey[700],
+                                  ),
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  _deleteRecipe(context);
+                                  Navigator.pop(context);
+                                },
+                                child: Text(
+                                  "Delete",
+                                  style: GoogleFonts.poppins(
+                                    fontSize: screenWidth * 0.032,
+                                    color: Colors.redAccent,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Colors.redAccent),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        foregroundColor: Colors.redAccent,
+                        padding: EdgeInsets.symmetric(
+                          vertical: screenHeight * 0.015,
+                        ),
+                      ),
+                      child: Text(
+                        "Delete",
+                        style: GoogleFonts.poppins(
+                          fontSize: screenWidth * 0.035,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

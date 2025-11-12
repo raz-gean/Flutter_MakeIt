@@ -67,35 +67,37 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
   @override
   Widget build(BuildContext context) {
     final recipe = widget.recipe;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),
       appBar: AppBar(
         title: Text(
           recipe.title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: GoogleFonts.oswald(
-            fontSize: 22,
+            fontSize: screenWidth * 0.05,
             fontWeight: FontWeight.bold,
-            color: Colors.white, // 🔴 Changed to white text
+            color: Colors.white,
           ),
         ),
-        backgroundColor: Colors.redAccent, // 🔴 AppBar background red
+        backgroundColor: Colors.redAccent,
         elevation: 0,
         centerTitle: true,
-        iconTheme: const IconThemeData(color: Colors.white), // 🔴 White icons
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(screenWidth * 0.04),
         child: Container(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(screenWidth * 0.05),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.redAccent.withValues(
-                  alpha: 0.1,
-                ), // 🔴 Soft red glow
+                color: Colors.redAccent.withValues(alpha: 0.1),
                 blurRadius: 8,
                 offset: const Offset(0, 4),
               ),
@@ -104,66 +106,73 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 🖼 Recipe Image
-              ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: Image.asset(
-                  recipe.imagePath,
-                  height: 230,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
+              // 🖼 Recipe Image - Responsive and optimized
+              RepaintBoundary(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Image.asset(
+                    recipe.imagePath,
+                    height: screenHeight * 0.25,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    cacheHeight: (screenHeight * 0.25).toInt(),
+                    cacheWidth: screenWidth.toInt(),
+                  ),
                 ),
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: screenHeight * 0.02),
 
               // 📝 Description
               Text(
                 recipe.description,
                 style: GoogleFonts.poppins(
-                  fontSize: 16,
+                  fontSize: screenWidth * 0.038,
                   color: Colors.grey[800],
                   height: 1.5,
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: screenHeight * 0.03),
 
-              // 🍳 Ingredients
+              // 🍳 Ingredients Section
               Text(
                 "Ingredients",
                 style: GoogleFonts.oswald(
-                  fontSize: 20,
+                  fontSize: screenWidth * 0.05,
                   fontWeight: FontWeight.bold,
-                  color: Colors.redAccent, // 🔴 Title color
+                  color: Colors.redAccent,
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: screenHeight * 0.01),
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(screenWidth * 0.04),
                 decoration: BoxDecoration(
-                  color: Colors.redAccent.withValues(
-                    alpha: 0.05,
-                  ), // 🔴 Light red bg
+                  color: Colors.redAccent.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: recipe.ingredients
                       .map(
-                        (ing) => Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
+                        (ingredient) => Padding(
+                          padding: EdgeInsets.symmetric(
+                            vertical: screenHeight * 0.006,
+                          ),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Icon(
-                                Icons.circle,
-                                size: 8,
-                                color: Colors.redAccent, // 🔴 Changed dot color
+                              Text(
+                                "• ",
+                                style: GoogleFonts.poppins(
+                                  fontSize: screenWidth * 0.04,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.redAccent,
+                                ),
                               ),
-                              const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
-                                  ing,
+                                  ingredient.trim(),
                                   style: GoogleFonts.poppins(
-                                    fontSize: 15,
+                                    fontSize: screenWidth * 0.035,
                                     color: Colors.black87,
                                   ),
                                 ),
@@ -176,48 +185,67 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
                 ),
               ),
 
-              const SizedBox(height: 24),
+              SizedBox(height: screenHeight * 0.03),
 
-              // 🧾 Steps
+              // 🧾 Steps Section
               Text(
                 "Steps",
                 style: GoogleFonts.oswald(
-                  fontSize: 20,
+                  fontSize: screenWidth * 0.05,
                   fontWeight: FontWeight.bold,
-                  color: Colors.redAccent, // 🔴 Title color
+                  color: Colors.redAccent,
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: screenHeight * 0.01),
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(screenWidth * 0.04),
                 decoration: BoxDecoration(
                   color: Colors.redAccent.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: recipe.steps.asMap().entries.map((entry) {
                     int index = entry.key + 1;
                     String step = entry.value;
                     return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      padding: EdgeInsets.symmetric(
+                        vertical: screenHeight * 0.008,
+                      ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            "$index.",
-                            style: GoogleFonts.poppins(
-                              fontWeight: FontWeight.w600,
-                              color: Colors.redAccent, // 🔴 Step number color
+                          Container(
+                            width: screenWidth * 0.08,
+                            height: screenWidth * 0.08,
+                            decoration: BoxDecoration(
+                              color: Colors.redAccent,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Text(
+                                "$index",
+                                style: GoogleFonts.poppins(
+                                  fontSize: screenWidth * 0.032,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          SizedBox(width: screenWidth * 0.03),
                           Expanded(
-                            child: Text(
-                              step,
-                              style: GoogleFonts.poppins(
-                                fontSize: 15,
-                                height: 1.5,
-                                color: Colors.black87,
+                            child: Padding(
+                              padding: EdgeInsets.only(
+                                top: screenHeight * 0.005,
+                              ),
+                              child: Text(
+                                step.trim(),
+                                style: GoogleFonts.poppins(
+                                  fontSize: screenWidth * 0.035,
+                                  color: Colors.black87,
+                                  height: 1.4,
+                                ),
                               ),
                             ),
                           ),
@@ -227,34 +255,38 @@ class _RecipeDetailPageState extends State<RecipeDetailPage> {
                   }).toList(),
                 ),
               ),
-              const SizedBox(height: 30),
+
+              SizedBox(height: screenHeight * 0.04),
 
               // ❤️ Favorite Button
               Center(
-                child: ElevatedButton.icon(
-                  onPressed: _toggleFavorite,
-                  icon: Icon(
-                    isFavorite ? Icons.favorite : Icons.favorite_border,
-                    color: Colors.white,
-                  ),
-                  label: Text(
-                    isFavorite ? "Remove from Favorites" : "Add to Favorites",
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
+                child: SizedBox(
+                  width: screenWidth * 0.6,
+                  height: screenHeight * 0.06,
+                  child: ElevatedButton.icon(
+                    onPressed: _toggleFavorite,
+                    icon: Icon(
+                      isFavorite ? Icons.favorite : Icons.favorite_border,
                       color: Colors.white,
+                      size: screenWidth * 0.06,
                     ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.redAccent,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 14,
+                    label: Text(
+                      isFavorite ? "In Favorites" : "Add to Favorites",
+                      style: GoogleFonts.poppins(
+                        fontSize: screenWidth * 0.035,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
                     ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isFavorite
+                          ? Colors.redAccent
+                          : Colors.redAccent.withValues(alpha: 0.7),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 4,
                     ),
-                    elevation: 0,
                   ),
                 ),
               ),

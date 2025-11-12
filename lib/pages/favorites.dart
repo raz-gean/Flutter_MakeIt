@@ -18,11 +18,28 @@ class _FavoritesPageState extends State<FavoritesPage> {
   void initState() {
     super.initState();
     _loadFavorites();
+    // Precache images after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _precacheImages();
+    });
+  }
+
+  void _precacheImages() {
+    // Precache all favorite recipe images for smooth rendering
+    for (var recipe in favoriteRecipes) {
+      if (recipe.imagePath.isNotEmpty) {
+        precacheImage(AssetImage(recipe.imagePath), context);
+      }
+    }
   }
 
   void _loadFavorites() async {
     final favs = await DBHelper.instance.getRecipes();
     setState(() => favoriteRecipes = favs);
+    // Precache newly loaded images
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _precacheImages();
+    });
   }
 
   void _removeFavorite(int id) async {
@@ -46,13 +63,18 @@ class _FavoritesPageState extends State<FavoritesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final isMobile = screenWidth < 600;
+    final isTablet = screenWidth >= 600 && screenWidth < 1000;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF6F6F6),
       appBar: AppBar(
         title: Text(
           "Favorites",
           style: GoogleFonts.oswald(
-            fontSize: 22,
+            fontSize: screenWidth * 0.055,
             fontWeight: FontWeight.bold,
             color: const Color.fromARGB(221, 251, 87, 87),
           ),
@@ -67,117 +89,135 @@ class _FavoritesPageState extends State<FavoritesPage> {
               child: Text(
                 "No favorites yet!",
                 style: GoogleFonts.poppins(
-                  fontSize: 16,
+                  fontSize: screenWidth * 0.04,
                   color: Colors.grey[700],
                 ),
               ),
             )
           : GridView.builder(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(screenWidth * 0.035),
               itemCount: favoriteRecipes.length,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 0.72, // works well on small screens
+              addAutomaticKeepAlives: true,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: isMobile
+                    ? 2
+                    : isTablet
+                    ? 3
+                    : 4,
+                crossAxisSpacing: screenWidth * 0.025,
+                mainAxisSpacing: screenWidth * 0.025,
+                childAspectRatio: 0.68,
               ),
               itemBuilder: (context, index) {
                 final recipe = favoriteRecipes[index];
-                return GestureDetector(
-                  onTap: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => RecipeDetailPage(recipe: recipe),
-                      ),
-                    );
-                    _loadFavorites();
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withValues(alpha: 0.15),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        // Recipe Image
-                        ClipRRect(
-                          borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(16),
-                          ),
-                          child: Image.asset(
-                            recipe.imagePath.isNotEmpty
-                                ? recipe.imagePath
-                                : 'assets/images/recipe1.jpg',
-                            height: 120,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-
-                        // Recipe Info + Delete Button
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.all(10),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Title & Ingredients
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      recipe.title,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: GoogleFonts.poppins(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 15,
-                                        color: Colors.black87,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      "${recipe.ingredients.length} ingredients",
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 13,
-                                        color: Colors.grey[700],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-
-                                // Delete Button
-                                Align(
-                                  alignment: Alignment.bottomRight,
-                                  child: IconButton(
-                                    icon: const Icon(Icons.delete_outline),
-                                    color: Colors.redAccent,
-                                    onPressed: () {
-                                      if (recipe.id != null) {
-                                        _removeFavorite(recipe.id!);
-                                      }
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
+                return _buildFavoriteCard(recipe, screenWidth, screenHeight);
               },
             ),
+    );
+  }
+
+  Widget _buildFavoriteCard(
+    Recipe recipe,
+    double screenWidth,
+    double screenHeight,
+  ) {
+    return RepaintBoundary(
+      child: GestureDetector(
+        onTap: () async {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => RecipeDetailPage(recipe: recipe),
+            ),
+          );
+          _loadFavorites();
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withValues(alpha: 0.12),
+                blurRadius: 6,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Recipe Image - Optimized height for smooth rendering
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(14),
+                ),
+                child: Image.asset(
+                  recipe.imagePath.isNotEmpty
+                      ? recipe.imagePath
+                      : 'assets/images/recipe1.jpg',
+                  height: screenHeight * 0.14,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  cacheHeight: (screenHeight * 0.14).toInt(),
+                  cacheWidth: (screenWidth * 0.42).toInt(),
+                ),
+              ),
+
+              // Recipe Info - Compact and responsive
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: screenWidth * 0.03,
+                  vertical: screenWidth * 0.025,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Title
+                    Text(
+                      recipe.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w600,
+                        fontSize: screenWidth * 0.035,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    SizedBox(height: screenHeight * 0.005),
+                    // Ingredients count
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "${recipe.ingredients.length} ingredients • ${recipe.steps.length} steps",
+                          style: GoogleFonts.poppins(
+                            fontSize: screenWidth * 0.028,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            if (recipe.id != null) {
+                              _removeFavorite(recipe.id!);
+                            }
+                          },
+                          child: Icon(
+                            Icons.close,
+                            size: screenWidth * 0.036,
+                            color: Colors.redAccent,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

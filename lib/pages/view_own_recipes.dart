@@ -35,11 +35,17 @@ class _ViewOwnRecipesPageState extends State<ViewOwnRecipesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
           "My Recipes",
-          style: GoogleFonts.poppins(color: Colors.white),
+          style: GoogleFonts.poppins(
+            color: Colors.white,
+            fontSize: screenWidth * 0.045,
+          ),
         ),
         backgroundColor: Colors.redAccent,
         iconTheme: const IconThemeData(color: Colors.white),
@@ -52,51 +58,96 @@ class _ViewOwnRecipesPageState extends State<ViewOwnRecipesPage> {
             MaterialPageRoute(builder: (_) => const MakeRecipePage()),
           ).then((_) => _loadUserRecipes());
         },
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add, color: Colors.white),
       ),
       body: userRecipes.isEmpty
-          ? const Center(child: Text("No recipes yet. Add one!"))
+          ? Center(
+              child: Text(
+                "No recipes yet. Add one!",
+                style: GoogleFonts.poppins(
+                  fontSize: screenWidth * 0.04,
+                  color: Colors.grey[700],
+                ),
+              ),
+            )
           : ListView.builder(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(screenWidth * 0.04),
               itemCount: userRecipes.length,
               itemBuilder: (context, i) {
                 final recipe = userRecipes[i];
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  elevation: 2,
-                  child: ListTile(
-                    title: Text(
-                      recipe.title,
-                      style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-                    ),
-                    subtitle: Text(
-                      recipe.description,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    onTap: () async {
-                      // Open the detail page
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => OwnRecipeDetailPage(recipe: recipe),
-                        ),
-                      );
-
-                      // Reload the list in case something changed
-                      _loadUserRecipes();
-                    },
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.redAccent),
-                      onPressed: () => _deleteRecipe(recipe.id!),
-                    ),
-                  ),
-                );
+                return _buildRecipeCard(recipe, screenWidth, screenHeight, i);
               },
             ),
+    );
+  }
+
+  Widget _buildRecipeCard(
+    Recipe recipe,
+    double screenWidth,
+    double screenHeight,
+    int index,
+  ) {
+    return RepaintBoundary(
+      child: Card(
+        margin: EdgeInsets.only(bottom: screenHeight * 0.015),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        elevation: 2,
+        child: ListTile(
+          contentPadding: EdgeInsets.all(screenWidth * 0.03),
+          title: Text(
+            recipe.title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.w600,
+              fontSize: screenWidth * 0.038,
+            ),
+          ),
+          subtitle: Padding(
+            padding: EdgeInsets.only(top: screenHeight * 0.008),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  recipe.description,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    fontSize: screenWidth * 0.032,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                SizedBox(height: screenHeight * 0.006),
+                Text(
+                  "${recipe.ingredients.length} ingredients • ${recipe.steps.length} steps",
+                  style: GoogleFonts.poppins(
+                    fontSize: screenWidth * 0.03,
+                    color: Colors.redAccent,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          onTap: () async {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => OwnRecipeDetailPage(recipe: recipe),
+              ),
+            );
+            _loadUserRecipes();
+          },
+          trailing: IconButton(
+            icon: Icon(
+              Icons.delete,
+              color: Colors.redAccent,
+              size: screenWidth * 0.05,
+            ),
+            onPressed: () => _deleteRecipe(recipe.id!),
+          ),
+        ),
+      ),
     );
   }
 }
